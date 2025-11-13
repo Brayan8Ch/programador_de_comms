@@ -19,6 +19,11 @@ const Index = () => {
     toast.success("Comunicación eliminada");
   };
 
+  const handleReorder = (newOrder: Communication[]) => {
+    setCommunications(newOrder);
+    toast.success("Orden actualizado");
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
@@ -48,12 +53,13 @@ const Index = () => {
               </TabsTrigger>
             </TabsList>
             <TabsContent value="schedule" className="mt-6">
-              <ScheduleView communications={communications} />
+              <ScheduleView communications={communications} onReorder={handleReorder} />
             </TabsContent>
             <TabsContent value="list" className="mt-6">
               <CommunicationList
                 communications={communications}
                 onDelete={handleDeleteCommunication}
+                onReorder={handleReorder}
               />
             </TabsContent>
           </Tabs>

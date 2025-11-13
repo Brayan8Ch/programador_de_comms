@@ -1,15 +1,106 @@
 import { useMemo } from "react";
 import { Communication } from "@/types/communication";
-import { format, eachDayOfInterval, isSameDay, getDay } from "date-fns";
+import { format, eachDayOfInterval, getDay } from "date-fns";
 import { es } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { DndContext, closestCenter, DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { GripVertical } from "lucide-react";
 
 interface ScheduleViewProps {
   communications: Communication[];
+  onReorder: (newOrder: Communication[]) => void;
 }
 
-export const ScheduleView = ({ communications }: ScheduleViewProps) => {
+interface SortableRowProps {
+  comm: Communication;
+  days: Date[];
+  dayAbbreviations: string[];
+}
+
+const SortableRow = ({ comm, days, dayAbbreviations }: SortableRowProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: comm.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const isCommunicationActive = (comm: Communication, date: Date) => {
+    const isInRange = date >= comm.fechaInicio && date <= comm.fechaFin;
+    if (!isInRange) return { active: false, canales: [] };
+
+    const dayOfWeek = getDay(date);
+    const dayAbbr = dayAbbreviations[dayOfWeek];
+    const canales = comm.canalesPorDia[dayAbbr] || [];
+    
+    return { active: canales.length > 0, canales };
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="grid grid-cols-[300px_repeat(auto-fill,40px)] border-b hover:bg-schedule-row-hover transition-colors"
+    >
+      <div className="sticky left-0 bg-card z-10 p-3 border-r flex items-center gap-2">
+        <div
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing hover:text-primary"
+        >
+          <GripVertical className="h-4 w-4" />
+        </div>
+        <div>
+          <div className="text-sm font-medium">{comm.campana}</div>
+          <div className="text-xs text-muted-foreground">
+            {comm.area && <span>{comm.area} • </span>}
+            {comm.responsable}
+          </div>
+          {comm.subCampana && (
+            <div className="text-xs text-muted-foreground">{comm.subCampana}</div>
+          )}
+        </div>
+      </div>
+      {days.map((day, index) => {
+        const { active, canales } = isCommunicationActive(comm, day);
+        return (
+          <div
+            key={index}
+            className={`border-r p-1 relative group ${active ? "bg-schedule-cell" : ""}`}
+            title={canales.length > 0 ? canales.join(", ") : ""}
+          >
+            {canales.length > 1 && (
+              <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white">
+                {canales.length}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+export const ScheduleView = ({ communications, onReorder }: ScheduleViewProps) => {
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
+
   const dateRange = useMemo(() => {
     if (communications.length === 0) return null;
 
@@ -27,13 +118,19 @@ export const ScheduleView = ({ communications }: ScheduleViewProps) => {
 
   const dayAbbreviations = ["DO", "LU", "MA", "MI", "JU", "VI", "SA"];
 
-  const isCommunicationActive = (comm: Communication, date: Date) => {
-    const isInRange = date >= comm.fechaInicio && date <= comm.fechaFin;
-    if (!isInRange) return false;
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
 
-    const dayOfWeek = getDay(date);
-    const dayAbbr = dayAbbreviations[dayOfWeek];
-    return comm.frecuencia.includes(dayAbbr);
+    if (over && active.id !== over.id) {
+      const oldIndex = communications.findIndex((c) => c.id === active.id);
+      const newIndex = communications.findIndex((c) => c.id === over.id);
+
+      const newOrder = [...communications];
+      const [movedItem] = newOrder.splice(oldIndex, 1);
+      newOrder.splice(newIndex, 0, movedItem);
+
+      onReorder(newOrder);
+    }
   };
 
   if (communications.length === 0) {
@@ -55,6 +152,9 @@ export const ScheduleView = ({ communications }: ScheduleViewProps) => {
     <Card>
       <CardHeader>
         <CardTitle>Cronograma de Comunicaciones</CardTitle>
+        <p className="text-sm text-muted-foreground mt-1">
+          Arrastra las filas para reorganizar. Pasa el cursor sobre las celdas para ver los canales.
+        </p>
       </CardHeader>
       <CardContent className="p-0">
         <ScrollArea className="w-full">
@@ -74,32 +174,25 @@ export const ScheduleView = ({ communications }: ScheduleViewProps) => {
               ))}
             </div>
 
-            <div>
-              {communications.map((comm) => (
-                <div
-                  key={comm.id}
-                  className="grid grid-cols-[300px_repeat(auto-fill,40px)] border-b hover:bg-schedule-row-hover transition-colors"
-                >
-                  <div className="sticky left-0 bg-card z-10 p-3 border-r">
-                    <div className="text-sm font-medium">{comm.campana}</div>
-                    <div className="text-xs text-muted-foreground">{comm.canal}</div>
-                    {comm.subCampana && (
-                      <div className="text-xs text-muted-foreground">{comm.subCampana}</div>
-                    )}
-                  </div>
-                  {days.map((day, index) => (
-                    <div
-                      key={index}
-                      className={`border-r p-1 ${
-                        isCommunicationActive(comm, day)
-                          ? "bg-schedule-cell"
-                          : ""
-                      }`}
-                    />
-                  ))}
-                </div>
-              ))}
-            </div>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={communications.map((c) => c.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {communications.map((comm) => (
+                  <SortableRow
+                    key={comm.id}
+                    comm={comm}
+                    days={days}
+                    dayAbbreviations={dayAbbreviations}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
           </div>
         </ScrollArea>
       </CardContent>
