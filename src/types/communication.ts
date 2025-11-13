@@ -1,15 +1,18 @@
 export interface Communication {
   id: string;
+  area: string;
+  responsable: string;
   campana: string;
   proceso: string;
   subCampana: string;
   subCampana2: string;
   segmento: string;
-  canal: string;
   ciclo: string;
   fechaInicio: Date;
   fechaFin: Date;
-  frecuencia: string[];
+  canalesPorDia: {
+    [key: string]: string[]; // key = día (LU, MA, etc), value = array de canales
+  };
 }
 
 export const diasSemana = [

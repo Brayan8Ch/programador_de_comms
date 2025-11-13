@@ -5,7 +5,6 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -20,38 +19,57 @@ interface CommunicationFormProps {
 
 export const CommunicationForm = ({ onAddCommunication }: CommunicationFormProps) => {
   const [formData, setFormData] = useState({
+    area: "",
+    responsable: "",
     campana: "",
     proceso: "",
     subCampana: "",
     subCampana2: "",
     segmento: "",
-    canal: "",
     ciclo: "",
   });
   const [fechaInicio, setFechaInicio] = useState<Date | undefined>(undefined);
   const [fechaFin, setFechaFin] = useState<Date | undefined>(undefined);
-  const [frecuencia, setFrecuencia] = useState<string[]>([]);
+  const [canalesPorDia, setCanalesPorDia] = useState<{ [key: string]: string[] }>({
+    LU: [],
+    MA: [],
+    MI: [],
+    JU: [],
+    VI: [],
+    SA: [],
+    DO: [],
+  });
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleFrecuenciaToggle = (dia: string) => {
-    setFrecuencia((prev) =>
-      prev.includes(dia) ? prev.filter((d) => d !== dia) : [...prev, dia]
-    );
+  const handleCanalToggle = (dia: string, canal: string) => {
+    setCanalesPorDia((prev) => {
+      const canalesActuales = prev[dia] || [];
+      const yaExiste = canalesActuales.includes(canal);
+
+      return {
+        ...prev,
+        [dia]: yaExiste
+          ? canalesActuales.filter((c) => c !== canal)
+          : [...canalesActuales, canal],
+      };
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.campana || !formData.canal || !fechaInicio || !fechaFin) {
-      toast.error("Por favor completa los campos obligatorios");
+    if (!formData.campana || !fechaInicio || !fechaFin) {
+      toast.error("Por favor completa los campos obligatorios (Campaña, Fechas)");
       return;
     }
 
-    if (frecuencia.length === 0) {
-      toast.error("Selecciona al menos un día de frecuencia");
+    // Verificar que al menos un día tenga canales asignados
+    const hayCanales = Object.values(canalesPorDia).some((canales) => canales.length > 0);
+    if (!hayCanales) {
+      toast.error("Asigna al menos un canal a un día de la semana");
       return;
     }
 
@@ -60,7 +78,7 @@ export const CommunicationForm = ({ onAddCommunication }: CommunicationFormProps
       ...formData,
       fechaInicio,
       fechaFin,
-      frecuencia,
+      canalesPorDia,
     };
 
     onAddCommunication(newCommunication);
@@ -68,17 +86,26 @@ export const CommunicationForm = ({ onAddCommunication }: CommunicationFormProps
 
     // Reset form
     setFormData({
+      area: "",
+      responsable: "",
       campana: "",
       proceso: "",
       subCampana: "",
       subCampana2: "",
       segmento: "",
-      canal: "",
       ciclo: "",
     });
     setFechaInicio(undefined);
     setFechaFin(undefined);
-    setFrecuencia([]);
+    setCanalesPorDia({
+      LU: [],
+      MA: [],
+      MI: [],
+      JU: [],
+      VI: [],
+      SA: [],
+      DO: [],
+    });
   };
 
   return (
@@ -87,8 +114,28 @@ export const CommunicationForm = ({ onAddCommunication }: CommunicationFormProps
         <CardTitle>Nueva Comunicación</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="area">Área</Label>
+              <Input
+                id="area"
+                value={formData.area}
+                onChange={(e) => handleInputChange("area", e.target.value)}
+                placeholder="Ej: Marketing"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="responsable">Responsable</Label>
+              <Input
+                id="responsable"
+                value={formData.responsable}
+                onChange={(e) => handleInputChange("responsable", e.target.value)}
+                placeholder="Ej: Juan Pérez"
+              />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="campana">Campaña *</Label>
               <Input
@@ -137,22 +184,6 @@ export const CommunicationForm = ({ onAddCommunication }: CommunicationFormProps
                 onChange={(e) => handleInputChange("segmento", e.target.value)}
                 placeholder="Ej: Premium"
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="canal">Canal *</Label>
-              <Select value={formData.canal} onValueChange={(value) => handleInputChange("canal", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar canal" />
-                </SelectTrigger>
-                <SelectContent>
-                  {canalesDisponibles.map((canal) => (
-                    <SelectItem key={canal} value={canal}>
-                      {canal}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
 
             <div className="space-y-2">
@@ -214,26 +245,39 @@ export const CommunicationForm = ({ onAddCommunication }: CommunicationFormProps
                     selected={fechaFin}
                     onSelect={setFechaFin}
                     initialFocus
-                    disabled={(date) => fechaInicio ? date < fechaInicio : false}
+                    disabled={(date) => (fechaInicio ? date < fechaInicio : false)}
                   />
                 </PopoverContent>
               </Popover>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Frecuencia (Días de envío) *</Label>
-            <div className="flex flex-wrap gap-4">
+          <div className="space-y-3">
+            <Label className="text-base">Canales por Día de la Semana *</Label>
+            <p className="text-sm text-muted-foreground">
+              Selecciona qué canales se usarán en cada día específico
+            </p>
+            <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
               {diasSemana.map((dia) => (
-                <div key={dia.value} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={dia.value}
-                    checked={frecuencia.includes(dia.value)}
-                    onCheckedChange={() => handleFrecuenciaToggle(dia.value)}
-                  />
-                  <Label htmlFor={dia.value} className="cursor-pointer">
-                    {dia.label}
-                  </Label>
+                <div key={dia.value} className="space-y-2">
+                  <div className="font-medium text-sm">{dia.label}</div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pl-4">
+                    {canalesDisponibles.map((canal) => (
+                      <div key={`${dia.value}-${canal}`} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`${dia.value}-${canal}`}
+                          checked={canalesPorDia[dia.value]?.includes(canal) || false}
+                          onCheckedChange={() => handleCanalToggle(dia.value, canal)}
+                        />
+                        <Label
+                          htmlFor={`${dia.value}-${canal}`}
+                          className="cursor-pointer text-xs leading-tight"
+                        >
+                          {canal}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
