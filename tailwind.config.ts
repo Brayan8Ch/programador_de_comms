@@ -47,6 +47,12 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        schedule: {
+          cell: "hsl(var(--schedule-cell))",
+          "cell-light": "hsl(var(--schedule-cell-light))",
+          header: "hsl(var(--schedule-header))",
+          "row-hover": "hsl(var(--schedule-row-hover))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
