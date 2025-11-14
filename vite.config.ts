@@ -3,6 +3,9 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
 export default defineConfig(({ mode }) => ({
+  // Permite ajustar la base pública (útil para GitHub Pages).
+  // Se puede pasar `VITE_BASE` desde el entorno (p. ej. en GitHub Actions).
+  base: process.env.VITE_BASE || "/",
   server: {
     host: "0.0.0.0",
     port: 8080,
