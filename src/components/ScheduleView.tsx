@@ -3,6 +3,10 @@ import { Communication } from "@/types/communication";
 import { format, eachDayOfInterval, getDay } from "date-fns";
 import { es } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Download, Copy } from "lucide-react";
+import { exportToExcel, copyToClipboard } from "@/utils/excelExport";
+import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DndContext, closestCenter, DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
@@ -148,13 +152,45 @@ export const ScheduleView = ({ communications, onReorder }: ScheduleViewProps) =
     );
   }
 
+  const handleExport = () => {
+    try {
+      exportToExcel(communications);
+      toast.success("Excel exportado exitosamente");
+    } catch (error) {
+      console.error(error);
+      toast.error("Error al exportar Excel");
+    }
+  };
+
+  const handleCopy = async () => {
+    try {
+      await copyToClipboard(communications);
+      toast.success("Comunicaciones copiadas al portapapeles");
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al copiar al portapapeles");
+    }
+  };
+
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Cronograma de Comunicaciones</CardTitle>
-        <p className="text-sm text-muted-foreground mt-1">
-          Arrastra las filas para reorganizar. Pasa el cursor sobre las celdas para ver los canales.
-        </p>
+      <CardHeader className="flex items-center justify-between">
+        <div>
+          <CardTitle>Cronograma de Comunicaciones</CardTitle>
+          <p className="text-sm text-muted-foreground mt-1">
+            Arrastra las filas para reorganizar. Pasa el cursor sobre las celdas para ver los canales.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={handleCopy} variant="outline" size="sm">
+            <Copy className="mr-2 h-4 w-4" />
+            Copiar
+          </Button>
+          <Button onClick={handleExport} variant="outline" size="sm">
+            <Download className="mr-2 h-4 w-4" />
+            Exportar Excel
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="p-0">
         <ScrollArea className="w-full">
