@@ -51,17 +51,21 @@ const SortableRow = ({ comm, days, dayAbbreviations }: SortableRowProps) => {
     return { active: canales.length > 0, canales };
   };
 
+  // Obtener lista única de canales usados en esta comunicación (mantener orden consistente)
+  const canalesUnicos = Array.from(
+    new Set(Object.values(comm.canalesPorDia).flat())
+  );
+
+  // Si no hay canales, mostrar una fila vacía para mantener estructura
+  const filasCanales = canalesUnicos.length > 0 ? canalesUnicos : ["(sin canal)"];
+
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className="grid grid-cols-[300px_repeat(auto-fill,40px)] border-b hover:bg-schedule-row-hover transition-colors"
-    >
-      <div className="sticky left-0 bg-card z-10 p-3 border-r flex items-center gap-2">
+    <div ref={setNodeRef} style={style} className="border-b">
+      <div className="sticky left-0 bg-card z-10 p-3 border-r w-[300px] flex items-start gap-2">
         <div
           {...attributes}
           {...listeners}
-          className="cursor-grab active:cursor-grabbing hover:text-primary"
+          className="cursor-grab active:cursor-grabbing hover:text-primary pt-1"
         >
           <GripVertical className="h-4 w-4" />
         </div>
@@ -76,22 +80,34 @@ const SortableRow = ({ comm, days, dayAbbreviations }: SortableRowProps) => {
           )}
         </div>
       </div>
-      {days.map((day, index) => {
-        const { active, canales } = isCommunicationActive(comm, day);
-        return (
-          <div
-            key={index}
-            className={`border-r p-1 relative group ${active ? "bg-schedule-cell" : ""}`}
-            title={canales.length > 0 ? canales.join(", ") : ""}
-          >
-            {canales.length > 1 && (
-              <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white">
-                {canales.length}
-              </div>
-            )}
-          </div>
-        );
-      })}
+
+      <div className="overflow-x-auto">
+        <div
+          className="min-w-max"
+          style={{ display: "grid", gridTemplateColumns: `repeat(${days.length}, 40px)`, gap: 0 }}
+        >
+          {filasCanales.map((canal) => (
+            <>
+              {days.map((day, idx) => {
+                const dow = getDay(day);
+                const dayAbbr = dayAbbreviations[dow];
+                const canalesDia = comm.canalesPorDia[dayAbbr] || [];
+                const activo = canalesDia.includes(canal);
+
+                return (
+                  <div
+                    key={`${comm.id}-${canal}-${idx}`}
+                    className={`w-10 h-8 border-r flex items-center justify-center ${activo ? "bg-sky-500" : "bg-transparent"}`}
+                    title={activo ? canal : ""}
+                  >
+                    {activo ? <span className="text-white text-[11px]">&nbsp;</span> : null}
+                  </div>
+                );
+              })}
+            </>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };
