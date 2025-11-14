@@ -23,7 +23,6 @@ export default defineConfig(({ mode }) => ({
     },
   },
 
-  /** 🔥 ESTA ES LA PARTE CRÍTICA PARA GITHUB PAGES */
-  base: "/comms-craft-grid/",
-  /** Nota: debe coincidir EXACTAMENTE con el nombre del repositorio */
+  // Nota: la base pública debe establecerse con la variable de entorno VITE_BASE
+  // cuando se necesite (p. ej. en GitHub Actions). Por defecto usamos '/'.
 }));
