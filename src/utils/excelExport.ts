@@ -62,3 +62,68 @@ export const exportToExcel = (communications: Communication[]) => {
   const fileName = `comunicaciones_${format(new Date(), "yyyyMMdd_HHmmss")}.xlsx`;
   XLSX.writeFile(workbook, fileName);
 };
+
+export const copyToClipboard = async (communications: Communication[]) => {
+  const rows: string[] = [];
+  /*
+  const headers = [
+    "Área",
+    "Responsable",
+    "Campaña",
+    "Proceso",
+    "Sub-Campaña",
+    "Sub-Campaña2",
+    "Segmento",
+    "Canal",
+    "Ciclo",
+    "Fecha",
+  ];
+  rows.push(headers.join("\t"));
+  */
+  communications.forEach((comm) => {
+    const days = eachDayOfInterval({ start: comm.fechaInicio, end: comm.fechaFin });
+    days.forEach((day) => {
+      const dayOfWeek = getDay(day);
+      const dayAbbr = dayAbbreviations[dayOfWeek];
+      const canalesDelDia = comm.canalesPorDia[dayAbbr] || [];
+
+      canalesDelDia.forEach((canal) => {
+        const row = [
+          comm.area || "",
+          comm.responsable || "",
+          comm.campana,
+          comm.proceso || "",
+          comm.subCampana || "",
+          comm.subCampana2 || "",
+          comm.segmento || "",
+          canal,
+          comm.ciclo || "",
+          format(day, "dd/MM/yyyy", { locale: es }),
+        ];
+        rows.push(row.join("\t"));
+      });
+    });
+  });
+
+  const text = rows.join("\n");
+
+  // Try navigator.clipboard first
+  if (typeof navigator !== "undefined" && navigator.clipboard && navigator.clipboard.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  // Fallback for older browsers: create textarea
+  const el = document.createElement("textarea");
+  el.value = text;
+  el.setAttribute("readonly", "");
+  el.style.position = "absolute";
+  el.style.left = "-9999px";
+  document.body.appendChild(el);
+  el.select();
+  try {
+    document.execCommand("copy");
+  } finally {
+    document.body.removeChild(el);
+  }
+};

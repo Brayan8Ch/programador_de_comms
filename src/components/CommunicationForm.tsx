@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,9 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
+import ChannelDayGrid from "@/components/ChannelDayGrid";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { CalendarIcon, Plus } from "lucide-react";
+import Switch from "@mui/material/Switch";
 import { Communication, diasSemana, canalesDisponibles } from "@/types/communication";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -18,6 +20,30 @@ interface CommunicationFormProps {
 }
 
 export const CommunicationForm = ({ onAddCommunication }: CommunicationFormProps) => {
+  // Theme state
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem("theme") === "dark";
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      if (isDark) {
+        document.documentElement.classList.add("dark");
+        localStorage.setItem("theme", "dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+        localStorage.setItem("theme", "light");
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, [isDark]);
+
+  const toggleTheme = () => setIsDark((v) => !v);
   const [formData, setFormData] = useState({
     area: "",
     responsable: "",
@@ -39,6 +65,22 @@ export const CommunicationForm = ({ onAddCommunication }: CommunicationFormProps
     SA: [],
     DO: [],
   });
+
+  // Locks per input field
+  const [locks, setLocks] = useState<Record<string, boolean>>({
+    area: false,
+    responsable: false,
+    campana: false,
+    proceso: false,
+    subCampana: false,
+    subCampana2: false,
+    segmento: false,
+    ciclo: false,
+  });
+
+  const toggleLock = (field: string) => {
+    setLocks((prev) => ({ ...prev, [field]: !prev[field] }));
+  };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -83,117 +125,155 @@ export const CommunicationForm = ({ onAddCommunication }: CommunicationFormProps
 
     onAddCommunication(newCommunication);
     toast.success("Comunicación agregada exitosamente");
-
-    // Reset form
-    setFormData({
-      area: "",
-      responsable: "",
-      campana: "",
-      proceso: "",
-      subCampana: "",
-      subCampana2: "",
-      segmento: "",
-      ciclo: "",
-    });
-    setFechaInicio(undefined);
-    setFechaFin(undefined);
-    setCanalesPorDia({
-      LU: [],
-      MA: [],
-      MI: [],
-      JU: [],
-      VI: [],
-      SA: [],
-      DO: [],
-    });
+    // NOTE: Do not reset the form fields so the user keeps the inputs after adding a communication.
   };
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex items-center justify-between">
         <CardTitle>Nueva Comunicación</CardTitle>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Tema oscuro</span>
+          <Switch checked={isDark} onChange={() => toggleTheme()} size="small" color="primary" inputProps={{ 'aria-label': 'Toggle theme' }} />
+        </div>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="area">Área</Label>
-              <Input
-                id="area"
-                value={formData.area}
-                onChange={(e) => handleInputChange("area", e.target.value)}
-                placeholder="Ej: Marketing"
-              />
+              <div className="relative">
+                <Input
+                  id="area"
+                  value={formData.area}
+                  onChange={(e) => handleInputChange("area", e.target.value)}
+                  placeholder="Ej: Marketing"
+                  disabled={!!locks.area}
+                  className="pr-10"
+                />
+                <div className="absolute inset-y-0 right-2 flex items-center">
+                  <Switch checked={!!locks.area} onChange={() => toggleLock("area")} size="small" color="primary" inputProps={{ 'aria-label': 'Bloquear area' }} />
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="responsable">Responsable</Label>
-              <Input
-                id="responsable"
-                value={formData.responsable}
-                onChange={(e) => handleInputChange("responsable", e.target.value)}
-                placeholder="Ej: Juan Pérez"
-              />
+              <div className="relative">
+                <Input
+                  id="responsable"
+                  value={formData.responsable}
+                  onChange={(e) => handleInputChange("responsable", e.target.value)}
+                  placeholder="Ej: Juan Pérez"
+                  disabled={!!locks.responsable}
+                  className="pr-10"
+                />
+                <div className="absolute inset-y-0 right-2 flex items-center">
+                  <Switch checked={!!locks.responsable} onChange={() => toggleLock("responsable")} size="small" color="primary" inputProps={{ 'aria-label': 'Bloquear responsable' }} />
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="campana">Campaña *</Label>
-              <Input
-                id="campana"
-                value={formData.campana}
-                onChange={(e) => handleInputChange("campana", e.target.value)}
-                placeholder="Ej: Pronto Pago"
-              />
+              <div className="relative">
+                <Input
+                  id="campana"
+                  value={formData.campana}
+                  onChange={(e) => handleInputChange("campana", e.target.value)}
+                  placeholder="Ej: Pronto Pago"
+                  disabled={!!locks.campana}
+                  className="pr-10"
+                />
+                <div className="absolute inset-y-0 right-2 flex items-center">
+                  <Switch checked={!!locks.campana} onChange={() => toggleLock("campana")} size="small" color="primary" inputProps={{ 'aria-label': 'Bloquear campana' }} />
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="proceso">Proceso</Label>
-              <Input
-                id="proceso"
-                value={formData.proceso}
-                onChange={(e) => handleInputChange("proceso", e.target.value)}
-                placeholder="Ej: Cobranza"
-              />
+              <div className="relative">
+                <Input
+                  id="proceso"
+                  value={formData.proceso}
+                  onChange={(e) => handleInputChange("proceso", e.target.value)}
+                  placeholder="Ej: Cobranza"
+                  disabled={!!locks.proceso}
+                  className="pr-10"
+                />
+                <div className="absolute inset-y-0 right-2 flex items-center">
+                  <Switch checked={!!locks.proceso} onChange={() => toggleLock("proceso")} size="small" color="primary" inputProps={{ 'aria-label': 'Bloquear proceso' }} />
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="subCampana">Sub-Campaña 1</Label>
-              <Input
-                id="subCampana"
-                value={formData.subCampana}
-                onChange={(e) => handleInputChange("subCampana", e.target.value)}
-                placeholder="Ej: C1"
-              />
+              <div className="relative">
+                <Input
+                  id="subCampana"
+                  value={formData.subCampana}
+                  onChange={(e) => handleInputChange("subCampana", e.target.value)}
+                  placeholder="Ej: C1"
+                  disabled={!!locks.subCampana}
+                  className="pr-10"
+                />
+                <div className="absolute inset-y-0 right-2 flex items-center">
+                  <Switch checked={!!locks.subCampana} onChange={() => toggleLock("subCampana")} size="small" color="primary" inputProps={{ 'aria-label': 'Bloquear subCampana' }} />
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="subCampana2">Sub-Campaña 2</Label>
-              <Input
-                id="subCampana2"
-                value={formData.subCampana2}
-                onChange={(e) => handleInputChange("subCampana2", e.target.value)}
-                placeholder="Ej: Último día"
-              />
+              <div className="relative">
+                <Input
+                  id="subCampana2"
+                  value={formData.subCampana2}
+                  onChange={(e) => handleInputChange("subCampana2", e.target.value)}
+                  placeholder="Ej: Último día"
+                  disabled={!!locks.subCampana2}
+                  className="pr-10"
+                />
+                <div className="absolute inset-y-0 right-2 flex items-center">
+                  <Switch checked={!!locks.subCampana2} onChange={() => toggleLock("subCampana2")} size="small" color="primary" inputProps={{ 'aria-label': 'Bloquear subCampana2' }} />
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="segmento">Segmento</Label>
-              <Input
-                id="segmento"
-                value={formData.segmento}
-                onChange={(e) => handleInputChange("segmento", e.target.value)}
-                placeholder="Ej: Premium"
-              />
+              <div className="relative">
+                <Input
+                  id="segmento"
+                  value={formData.segmento}
+                  onChange={(e) => handleInputChange("segmento", e.target.value)}
+                  placeholder="Ej: Premium"
+                  disabled={!!locks.segmento}
+                  className="pr-10"
+                />
+                <div className="absolute inset-y-0 right-2 flex items-center">
+                  <Switch checked={!!locks.segmento} onChange={() => toggleLock("segmento")} size="small" color="primary" inputProps={{ 'aria-label': 'Bloquear segmento' }} />
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="ciclo">Ciclo</Label>
-              <Input
-                id="ciclo"
-                value={formData.ciclo}
-                onChange={(e) => handleInputChange("ciclo", e.target.value)}
-                placeholder="Ej: 02"
-              />
+              <div className="relative">
+                <Input
+                  id="ciclo"
+                  value={formData.ciclo}
+                  onChange={(e) => handleInputChange("ciclo", e.target.value)}
+                  placeholder="Ej: 02"
+                  disabled={!!locks.ciclo}
+                  className="pr-10"
+                />
+                <div className="absolute inset-y-0 right-2 flex items-center">
+                  <Switch checked={!!locks.ciclo} onChange={() => toggleLock("ciclo")} size="small" color="primary" inputProps={{ 'aria-label': 'Bloquear ciclo' }} />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -254,32 +334,15 @@ export const CommunicationForm = ({ onAddCommunication }: CommunicationFormProps
 
           <div className="space-y-3">
             <Label className="text-base">Canales por Día de la Semana *</Label>
-            <p className="text-sm text-muted-foreground">
-              Selecciona qué canales se usarán en cada día específico
-            </p>
-            <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
-              {diasSemana.map((dia) => (
-                <div key={dia.value} className="space-y-2">
-                  <div className="font-medium text-sm">{dia.label}</div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pl-4">
-                    {canalesDisponibles.map((canal) => (
-                      <div key={`${dia.value}-${canal}`} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`${dia.value}-${canal}`}
-                          checked={canalesPorDia[dia.value]?.includes(canal) || false}
-                          onCheckedChange={() => handleCanalToggle(dia.value, canal)}
-                        />
-                        <Label
-                          htmlFor={`${dia.value}-${canal}`}
-                          className="cursor-pointer text-xs leading-tight"
-                        >
-                          {canal}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
+            <p className="text-sm text-muted-foreground">Selecciona qué canales se usarán en cada día específico</p>
+            <div className="mt-2">
+              {/* Usar la cuadrícula de canales vs días. Controlamos su valor con `canalesPorDia`. */}
+              <ChannelDayGrid
+                value={canalesPorDia}
+                onChange={(next) => setCanalesPorDia(next)}
+                cellWidth="w-16"
+                cellHeight="h-8"
+              />
             </div>
           </div>
 

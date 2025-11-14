@@ -31,6 +31,7 @@ export const canalesDisponibles = [
   "Banner - UTP +Class",
   "Banner - UTP +Portal",
   "TV SAE",
+  "Call",
   "Totem",
   "SMS",
   "Notificación UTP +App",
