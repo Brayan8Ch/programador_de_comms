@@ -9,9 +9,17 @@ interface ChannelDayGridProps {
   // tamaño de celda opcional
   cellWidth?: string;
   cellHeight?: string;
+  // subconjunto de canales a mostrar; por defecto muestra todos
+  canales?: string[];
 }
 
-const ChannelDayGrid: React.FC<ChannelDayGridProps> = ({ value, onChange, cellWidth = 'w-20', cellHeight = 'h-10' }) => {
+const ChannelDayGrid: React.FC<ChannelDayGridProps> = ({
+  value,
+  onChange,
+  cellWidth = 'w-20',
+  cellHeight = 'h-10',
+  canales = canalesDisponibles,
+}) => {
   // Estado interno si no es controlado
   const initialSelected = useMemo(() => {
     const map: Record<string, Set<string>> = {};
@@ -115,45 +123,51 @@ const ChannelDayGrid: React.FC<ChannelDayGridProps> = ({ value, onChange, cellWi
       <div className="mb-2 text-sm text-muted-foreground px-2">
         <div>Atajos: <span className="font-semibold">Shift</span> para rango, <span className="font-semibold">Alt</span> para alternar fila completa, <span className="font-semibold">Ctrl/Cmd</span> para multiselección</div>
       </div>
-      <div className="inline-block min-w-full align-middle">
-        <div className="overflow-hidden border rounded-lg">
-          <table className="min-w-full table-fixed bg-white dark:bg-gray-800">
-            <thead className="bg-gray-50 dark:bg-gray-900">
-              <tr>
-                <th className="w-48 px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-300">Canal</th>
-                {diasSemana.map((d) => (
-                  <th key={d.value} className="px-3 py-3 text-center text-sm font-medium text-gray-600 dark:text-gray-300">
-                    <div className="text-xs font-semibold">{d.value}</div>
-                    <div className="text-[10px] text-gray-400 dark:text-gray-400">{d.label}</div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800">
-              {canalesDisponibles.map((canal) => (
-                <tr key={canal} className="border-t">
-                  <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-200">{canal}</td>
-                  {diasSemana.map((d) => {
-                    const isSelected = selected[d.value]?.has(canal) ?? false;
-                    return (
-                      <td key={d.value} className="px-2 py-2 text-center">
-                        <button
-                          type="button"
-                          onClick={(e) => toggleCell(e, d.value, canal)}
-                          className={`inline-block ${cellWidth} ${cellHeight} rounded-md transition-all duration-150 cursor-pointer ${isSelected ? 'bg-blue-500 text-white' : 'bg-transparent border border-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                          aria-pressed={isSelected}
-                        >
-                          <span className="sr-only">{isSelected ? 'Seleccionado' : 'No seleccionado'}</span>
-                        </button>
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {canales.length === 0 ? (
+        <div className="text-sm text-muted-foreground px-2 py-6 text-center border rounded-lg">
+          Seleccioná al menos un canal arriba para habilitar la grilla.
         </div>
-      </div>
+      ) : (
+        <div className="inline-block min-w-full align-middle">
+          <div className="overflow-hidden border rounded-lg">
+            <table className="min-w-full table-fixed bg-white dark:bg-gray-800">
+              <thead className="bg-gray-50 dark:bg-gray-900">
+                <tr>
+                  <th className="w-48 px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-300">Canal</th>
+                  {diasSemana.map((d) => (
+                    <th key={d.value} className="px-3 py-3 text-center text-sm font-medium text-gray-600 dark:text-gray-300">
+                      <div className="text-xs font-semibold">{d.value}</div>
+                      <div className="text-[10px] text-gray-400 dark:text-gray-400">{d.label}</div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800">
+                {canales.map((canal) => (
+                  <tr key={canal} className="border-t">
+                    <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-200">{canal}</td>
+                    {diasSemana.map((d) => {
+                      const isSelected = selected[d.value]?.has(canal) ?? false;
+                      return (
+                        <td key={d.value} className="px-2 py-2 text-center">
+                          <button
+                            type="button"
+                            onClick={(e) => toggleCell(e, d.value, canal)}
+                            className={`inline-block ${cellWidth} ${cellHeight} rounded-md transition-all duration-150 cursor-pointer ${isSelected ? 'bg-blue-500 text-white' : 'bg-transparent border border-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                            aria-pressed={isSelected}
+                          >
+                            <span className="sr-only">{isSelected ? 'Seleccionado' : 'No seleccionado'}</span>
+                          </button>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
