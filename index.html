@@ -21,6 +21,15 @@
 
   <body>
     <div id="root"></div>
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("theme");
+          var isDark = stored ? stored === "dark" : true;
+          if (isDark) document.documentElement.classList.add("dark");
+        } catch (e) {}
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
