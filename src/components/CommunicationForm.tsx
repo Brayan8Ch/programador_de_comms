@@ -10,7 +10,7 @@ import ChannelDayGrid from "@/components/ChannelDayGrid";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { CalendarIcon, Plus } from "lucide-react";
-import Switch from "@mui/material/Switch";
+import { Switch } from "@/components/ui/switch";
 import { Communication, diasSemana, canalesDisponibles } from "@/types/communication";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -120,7 +120,7 @@ export const CommunicationForm = ({ onAddCommunication }: CommunicationFormProps
         <CardTitle>Nueva Comunicación</CardTitle>
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Tema oscuro</span>
-          <Switch checked={isDark} onChange={() => toggleTheme()} size="small" color="primary" inputProps={{ 'aria-label': 'Toggle theme' }} />
+          <Switch checked={isDark} onCheckedChange={toggleTheme} aria-label="Alternar tema oscuro" />
         </div>
       </CardHeader>
       <CardContent>
