@@ -32,8 +32,15 @@ export const Combobox = ({ value, onChange, options, placeholder = "Seleccionar.
     setSearch("");
   };
 
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      setSearch("");
+    }
+    setOpen(newOpen);
+  };
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
           type="button"
