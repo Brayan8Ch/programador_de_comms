@@ -23,9 +23,10 @@ export const CommunicationForm = ({ onAddCommunication }: CommunicationFormProps
   // Theme state
   const [isDark, setIsDark] = useState<boolean>(() => {
     try {
-      return localStorage.getItem("theme") === "dark";
+      const stored = localStorage.getItem("theme");
+      return stored ? stored === "dark" : true;
     } catch {
-      return false;
+      return true;
     }
   });
 
