@@ -118,6 +118,11 @@ export const CommunicationForm = ({ onAddCommunication }: CommunicationFormProps
       return;
     }
 
+    if (dateRange.to < dateRange.from) {
+      toast.error("La fecha de fin no puede ser anterior a la fecha de inicio");
+      return;
+    }
+
     // Verificar que al menos un día tenga canales asignados
     const hayCanales = Object.values(canalesPorDia).some((canales) => canales.length > 0);
     if (!hayCanales) {
