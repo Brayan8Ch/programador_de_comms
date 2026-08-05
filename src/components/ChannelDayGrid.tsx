@@ -25,8 +25,8 @@ const ChannelDayGrid: React.FC<ChannelDayGridProps> = ({
     const map: Record<string, Set<string>> = {};
     for (const d of diasSemana) map[d.value] = new Set<string>();
     if (value) {
-      for (const [dia, canales] of Object.entries(value)) {
-        map[dia] = new Set(canales || []);
+      for (const [dia, canalesDelDia] of Object.entries(value)) {
+        map[dia] = new Set(canalesDelDia || []);
       }
     }
     return map;

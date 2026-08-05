@@ -13,7 +13,6 @@ import type { DateRange } from "react-day-picker";
 import { CalendarIcon, Plus } from "lucide-react";
 import {
   Communication,
-  diasSemana,
   canalesDisponibles,
   areasDisponibles,
   responsablesDisponibles,
@@ -56,39 +55,18 @@ export const CommunicationForm = ({
   const [canalesSeleccionados, setCanalesSeleccionados] = useState<string[]>([]);
 
   const toggleCanalSeleccionado = (canal: string) => {
-    setCanalesSeleccionados((prev) => {
-      const yaEstaba = prev.includes(canal);
-      if (yaEstaba) {
-        setCanalesPorDia((prevDias) => {
-          const next: { [key: string]: string[] } = {};
-          for (const dia of Object.keys(prevDias)) {
-            next[dia] = prevDias[dia].filter((c) => c !== canal);
-          }
-          return next;
-        });
-        return prev.filter((c) => c !== canal);
-      }
-      return [...prev, canal];
-    });
+    setCanalesSeleccionados((prev) =>
+      prev.includes(canal) ? prev.filter((c) => c !== canal) : [...prev, canal]
+    );
+    setCanalesPorDia((prevDias) =>
+      Object.fromEntries(
+        Object.entries(prevDias).map(([dia, cs]) => [dia, cs.filter((c) => c !== canal)])
+      )
+    );
   };
-
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleCanalToggle = (dia: string, canal: string) => {
-    setCanalesPorDia((prev) => {
-      const canalesActuales = prev[dia] || [];
-      const yaExiste = canalesActuales.includes(canal);
-
-      return {
-        ...prev,
-        [dia]: yaExiste
-          ? canalesActuales.filter((c) => c !== canal)
-          : [...canalesActuales, canal],
-      };
-    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -99,8 +77,8 @@ export const CommunicationForm = ({
       return;
     }
 
-    if (dateRange.to < dateRange.from) {
-      toast.error("La fecha de fin no puede ser anterior a la fecha de inicio");
+    if (canalesSeleccionados.length === 0) {
+      toast.error("Seleccioná al menos un canal en la lista de arriba");
       return;
     }
 
@@ -255,14 +233,14 @@ export const CommunicationForm = ({
               Elegí qué canales aplican para esta comunicación, así la grilla de abajo no muestra los que no usás
             </p>
             <div className="flex flex-wrap gap-3">
-              {canalesDisponibles.map((canal) => (
+              {canalesDisponibles.map((canal, index) => (
                 <div key={canal} className="flex items-center gap-2">
                   <Checkbox
-                    id={`canal-${canal}`}
+                    id={`canal-${index}`}
                     checked={canalesSeleccionados.includes(canal)}
                     onCheckedChange={() => toggleCanalSeleccionado(canal)}
                   />
-                  <Label htmlFor={`canal-${canal}`} className="font-normal cursor-pointer">
+                  <Label htmlFor={`canal-${index}`} className="font-normal cursor-pointer">
                     {canal}
                   </Label>
                 </div>
