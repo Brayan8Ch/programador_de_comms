@@ -7,8 +7,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import ChannelDayGrid from "@/components/ChannelDayGrid";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { format, parse, isValid } from "date-fns";
+import type { DateRange } from "react-day-picker";
 import { CalendarIcon, Plus } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Communication, diasSemana, canalesDisponibles } from "@/types/communication";
@@ -55,8 +55,32 @@ export const CommunicationForm = ({ onAddCommunication }: CommunicationFormProps
     segmento: "",
     ciclo: "",
   });
-  const [fechaInicio, setFechaInicio] = useState<Date | undefined>(undefined);
-  const [fechaFin, setFechaFin] = useState<Date | undefined>(undefined);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [fechaInicioText, setFechaInicioText] = useState("");
+  const [fechaFinText, setFechaFinText] = useState("");
+
+  useEffect(() => {
+    setFechaInicioText(dateRange?.from ? format(dateRange.from, "dd/MM/yyyy") : "");
+    setFechaFinText(dateRange?.to ? format(dateRange.to, "dd/MM/yyyy") : "");
+  }, [dateRange]);
+
+  const handleFechaInicioBlur = () => {
+    const parsed = parse(fechaInicioText, "dd/MM/yyyy", new Date());
+    if (fechaInicioText.length === 10 && isValid(parsed)) {
+      setDateRange((prev) => ({ from: parsed, to: prev?.to }));
+    } else {
+      setFechaInicioText(dateRange?.from ? format(dateRange.from, "dd/MM/yyyy") : "");
+    }
+  };
+
+  const handleFechaFinBlur = () => {
+    const parsed = parse(fechaFinText, "dd/MM/yyyy", new Date());
+    if (fechaFinText.length === 10 && isValid(parsed)) {
+      setDateRange((prev) => ({ from: prev?.from, to: parsed }));
+    } else {
+      setFechaFinText(dateRange?.to ? format(dateRange.to, "dd/MM/yyyy") : "");
+    }
+  };
   const [canalesPorDia, setCanalesPorDia] = useState<{ [key: string]: string[] }>({
     LU: [],
     MA: [],
@@ -89,7 +113,7 @@ export const CommunicationForm = ({ onAddCommunication }: CommunicationFormProps
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.campana || !fechaInicio || !fechaFin) {
+    if (!formData.campana || !dateRange?.from || !dateRange?.to) {
       toast.error("Por favor completa los campos obligatorios (Campaña, Fechas)");
       return;
     }
@@ -104,8 +128,8 @@ export const CommunicationForm = ({ onAddCommunication }: CommunicationFormProps
     const newCommunication: Communication = {
       id: Date.now().toString(),
       ...formData,
-      fechaInicio,
-      fechaFin,
+      fechaInicio: dateRange.from,
+      fechaFin: dateRange.to,
       canalesPorDia,
     };
 
@@ -207,58 +231,60 @@ export const CommunicationForm = ({ onAddCommunication }: CommunicationFormProps
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Fecha Inicio *</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !fechaInicio && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {fechaInicio ? format(fechaInicio, "PPP", { locale: es }) : "Seleccionar fecha"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={fechaInicio}
-                    onSelect={setFechaInicio}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Fecha Fin *</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !fechaFin && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {fechaFin ? format(fechaFin, "PPP", { locale: es }) : "Seleccionar fecha"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={fechaFin}
-                    onSelect={setFechaFin}
-                    initialFocus
-                    disabled={(date) => (fechaInicio ? date < fechaInicio : false)}
-                  />
-                </PopoverContent>
-              </Popover>
+          <div className="space-y-2">
+            <Label>Fechas *</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !dateRange?.from && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateRange?.from
+                    ? dateRange.to
+                      ? `${format(dateRange.from, "dd/MM/yyyy")} - ${format(dateRange.to, "dd/MM/yyyy")}`
+                      : format(dateRange.from, "dd/MM/yyyy")
+                    : "Seleccionar fechas"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="range"
+                  numberOfMonths={2}
+                  selected={dateRange}
+                  onSelect={setDateRange}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label htmlFor="fechaInicioText" className="text-xs text-muted-foreground">
+                  Inicio (DD/MM/YYYY)
+                </Label>
+                <Input
+                  id="fechaInicioText"
+                  value={fechaInicioText}
+                  onChange={(e) => setFechaInicioText(e.target.value)}
+                  onBlur={handleFechaInicioBlur}
+                  placeholder="01/08/2026"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="fechaFinText" className="text-xs text-muted-foreground">
+                  Fin (DD/MM/YYYY)
+                </Label>
+                <Input
+                  id="fechaFinText"
+                  value={fechaFinText}
+                  onChange={(e) => setFechaFinText(e.target.value)}
+                  onBlur={handleFechaFinBlur}
+                  placeholder="15/08/2026"
+                />
+              </div>
             </div>
           </div>
 
