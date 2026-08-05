@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,48 +6,35 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Combobox } from "@/components/ui/combobox";
 import ChannelDayGrid from "@/components/ChannelDayGrid";
-import { format, parse, isValid } from "date-fns";
+import { format } from "date-fns";
 import type { DateRange } from "react-day-picker";
 import { CalendarIcon, Plus } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
-import { Communication, diasSemana, canalesDisponibles } from "@/types/communication";
+import {
+  Communication,
+  diasSemana,
+  canalesDisponibles,
+  areasDisponibles,
+  responsablesDisponibles,
+} from "@/types/communication";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface CommunicationFormProps {
   onAddCommunication: (communication: Communication) => void;
+  initialArea?: string;
+  initialResponsable?: string;
 }
 
-export const CommunicationForm = ({ onAddCommunication }: CommunicationFormProps) => {
-  // Theme state
-  const [isDark, setIsDark] = useState<boolean>(() => {
-    try {
-      const stored = localStorage.getItem("theme");
-      return stored ? stored === "dark" : true;
-    } catch {
-      return true;
-    }
-  });
-
-  useEffect(() => {
-    try {
-      if (isDark) {
-        document.documentElement.classList.add("dark");
-        localStorage.setItem("theme", "dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-        localStorage.setItem("theme", "light");
-      }
-    } catch (e) {
-      // ignore
-    }
-  }, [isDark]);
-
-  const toggleTheme = () => setIsDark((v) => !v);
+export const CommunicationForm = ({
+  onAddCommunication,
+  initialArea = "",
+  initialResponsable = "",
+}: CommunicationFormProps) => {
   const [formData, setFormData] = useState({
-    area: "",
-    responsable: "",
+    area: initialArea,
+    responsable: initialResponsable,
     campana: "",
     proceso: "",
     subCampana: "",
@@ -56,31 +43,6 @@ export const CommunicationForm = ({ onAddCommunication }: CommunicationFormProps
     ciclo: "",
   });
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-  const [fechaInicioText, setFechaInicioText] = useState("");
-  const [fechaFinText, setFechaFinText] = useState("");
-
-  useEffect(() => {
-    setFechaInicioText(dateRange?.from ? format(dateRange.from, "dd/MM/yyyy") : "");
-    setFechaFinText(dateRange?.to ? format(dateRange.to, "dd/MM/yyyy") : "");
-  }, [dateRange]);
-
-  const handleFechaInicioBlur = () => {
-    const parsed = parse(fechaInicioText, "dd/MM/yyyy", new Date());
-    if (fechaInicioText.length === 10 && isValid(parsed)) {
-      setDateRange((prev) => ({ from: parsed, to: prev?.to }));
-    } else {
-      setFechaInicioText(dateRange?.from ? format(dateRange.from, "dd/MM/yyyy") : "");
-    }
-  };
-
-  const handleFechaFinBlur = () => {
-    const parsed = parse(fechaFinText, "dd/MM/yyyy", new Date());
-    if (fechaFinText.length === 10 && isValid(parsed)) {
-      setDateRange((prev) => ({ from: prev?.from, to: parsed }));
-    } else {
-      setFechaFinText(dateRange?.to ? format(dateRange.to, "dd/MM/yyyy") : "");
-    }
-  };
   const [canalesPorDia, setCanalesPorDia] = useState<{ [key: string]: string[] }>({
     LU: [],
     MA: [],
@@ -90,6 +52,25 @@ export const CommunicationForm = ({ onAddCommunication }: CommunicationFormProps
     SA: [],
     DO: [],
   });
+
+  const [canalesSeleccionados, setCanalesSeleccionados] = useState<string[]>([]);
+
+  const toggleCanalSeleccionado = (canal: string) => {
+    setCanalesSeleccionados((prev) => {
+      const yaEstaba = prev.includes(canal);
+      if (yaEstaba) {
+        setCanalesPorDia((prevDias) => {
+          const next: { [key: string]: string[] } = {};
+          for (const dia of Object.keys(prevDias)) {
+            next[dia] = prevDias[dia].filter((c) => c !== canal);
+          }
+          return next;
+        });
+        return prev.filter((c) => c !== canal);
+      }
+      return [...prev, canal];
+    });
+  };
 
 
   const handleInputChange = (field: string, value: string) => {
@@ -145,33 +126,29 @@ export const CommunicationForm = ({ onAddCommunication }: CommunicationFormProps
 
   return (
     <Card>
-      <CardHeader className="flex items-center justify-between">
+      <CardHeader>
         <CardTitle>Nueva Comunicación</CardTitle>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Tema oscuro</span>
-          <Switch checked={isDark} onCheckedChange={toggleTheme} aria-label="Alternar tema oscuro" />
-        </div>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="area">Área</Label>
-              <Input
-                id="area"
+              <Combobox
                 value={formData.area}
-                onChange={(e) => handleInputChange("area", e.target.value)}
-                placeholder="Ej: Marketing"
+                onChange={(v) => handleInputChange("area", v)}
+                options={areasDisponibles}
+                placeholder="Seleccionar área"
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="responsable">Responsable</Label>
-              <Input
-                id="responsable"
+              <Combobox
                 value={formData.responsable}
-                onChange={(e) => handleInputChange("responsable", e.target.value)}
-                placeholder="Ej: Juan Pérez"
+                onChange={(v) => handleInputChange("responsable", v)}
+                options={responsablesDisponibles}
+                placeholder="Seleccionar responsable"
               />
             </div>
 
@@ -215,6 +192,9 @@ export const CommunicationForm = ({ onAddCommunication }: CommunicationFormProps
               />
             </div>
 
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="segmento">Segmento</Label>
               <Input
@@ -234,62 +214,57 @@ export const CommunicationForm = ({ onAddCommunication }: CommunicationFormProps
                 placeholder="Ej: 02"
               />
             </div>
+
+            <div className="space-y-2">
+              <Label>Fechas *</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !dateRange?.from && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dateRange?.from
+                      ? dateRange.to
+                        ? `${format(dateRange.from, "dd/MM/yyyy")} - ${format(dateRange.to, "dd/MM/yyyy")}`
+                        : format(dateRange.from, "dd/MM/yyyy")
+                      : "Seleccionar fechas"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="range"
+                    numberOfMonths={2}
+                    selected={dateRange}
+                    onSelect={setDateRange}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Fechas *</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !dateRange?.from && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dateRange?.from
-                    ? dateRange.to
-                      ? `${format(dateRange.from, "dd/MM/yyyy")} - ${format(dateRange.to, "dd/MM/yyyy")}`
-                      : format(dateRange.from, "dd/MM/yyyy")
-                    : "Seleccionar fechas"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="range"
-                  numberOfMonths={2}
-                  selected={dateRange}
-                  onSelect={setDateRange}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <Label htmlFor="fechaInicioText" className="text-xs text-muted-foreground">
-                  Inicio (DD/MM/YYYY)
-                </Label>
-                <Input
-                  id="fechaInicioText"
-                  value={fechaInicioText}
-                  onChange={(e) => setFechaInicioText(e.target.value)}
-                  onBlur={handleFechaInicioBlur}
-                  placeholder="01/08/2026"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="fechaFinText" className="text-xs text-muted-foreground">
-                  Fin (DD/MM/YYYY)
-                </Label>
-                <Input
-                  id="fechaFinText"
-                  value={fechaFinText}
-                  onChange={(e) => setFechaFinText(e.target.value)}
-                  onBlur={handleFechaFinBlur}
-                  placeholder="15/08/2026"
-                />
-              </div>
+          <div className="space-y-3">
+            <Label className="text-base">Canales a usar en esta comunicación *</Label>
+            <p className="text-sm text-muted-foreground">
+              Elegí qué canales aplican para esta comunicación, así la grilla de abajo no muestra los que no usás
+            </p>
+            <div className="flex flex-wrap gap-3">
+              {canalesDisponibles.map((canal) => (
+                <div key={canal} className="flex items-center gap-2">
+                  <Checkbox
+                    id={`canal-${canal}`}
+                    checked={canalesSeleccionados.includes(canal)}
+                    onCheckedChange={() => toggleCanalSeleccionado(canal)}
+                  />
+                  <Label htmlFor={`canal-${canal}`} className="font-normal cursor-pointer">
+                    {canal}
+                  </Label>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -301,6 +276,7 @@ export const CommunicationForm = ({ onAddCommunication }: CommunicationFormProps
               <ChannelDayGrid
                 value={canalesPorDia}
                 onChange={(next) => setCanalesPorDia(next)}
+                canales={canalesSeleccionados}
                 cellWidth="w-16"
                 cellHeight="h-8"
               />
