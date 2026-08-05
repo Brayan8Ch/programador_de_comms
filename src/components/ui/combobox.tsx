@@ -17,9 +17,10 @@ interface ComboboxProps {
   onChange: (value: string) => void;
   options: string[];
   placeholder?: string;
+  id?: string;
 }
 
-export const Combobox = ({ value, onChange, options, placeholder = "Seleccionar..." }: ComboboxProps) => {
+export const Combobox = ({ value, onChange, options, placeholder = "Seleccionar...", id }: ComboboxProps) => {
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
 
@@ -43,6 +44,7 @@ export const Combobox = ({ value, onChange, options, placeholder = "Seleccionar.
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
+          id={id}
           type="button"
           variant="outline"
           role="combobox"

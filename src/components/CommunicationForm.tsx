@@ -135,6 +135,7 @@ export const CommunicationForm = ({
             <div className="space-y-2">
               <Label htmlFor="area">Área</Label>
               <Combobox
+                id="area"
                 value={formData.area}
                 onChange={(v) => handleInputChange("area", v)}
                 options={areasDisponibles}
@@ -145,6 +146,7 @@ export const CommunicationForm = ({
             <div className="space-y-2">
               <Label htmlFor="responsable">Responsable</Label>
               <Combobox
+                id="responsable"
                 value={formData.responsable}
                 onChange={(v) => handleInputChange("responsable", v)}
                 options={responsablesDisponibles}

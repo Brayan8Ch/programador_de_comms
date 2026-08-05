@@ -32,12 +32,19 @@ export const SessionSetup = ({ onComplete }: SessionSetupProps) => {
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label>Área</Label>
-            <Combobox value={area} onChange={setArea} options={areasDisponibles} placeholder="Seleccionar área" />
+            <Label htmlFor="area">Área</Label>
+            <Combobox
+              id="area"
+              value={area}
+              onChange={setArea}
+              options={areasDisponibles}
+              placeholder="Seleccionar área"
+            />
           </div>
           <div className="space-y-2">
-            <Label>Responsable</Label>
+            <Label htmlFor="responsable">Responsable</Label>
             <Combobox
+              id="responsable"
               value={responsable}
               onChange={setResponsable}
               options={responsablesDisponibles}
