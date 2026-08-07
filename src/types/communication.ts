@@ -35,4 +35,14 @@ export const canalesDisponibles = [
   "Totem",
   "SMS",
   "Notificación UTP +App",
+  "Whatsapp",
+  "Canal de Whatsapp",
+  "Banner",
+  "Banner - UTP+App",
 ];
+
+// Completar con los valores reales de la organización.
+export const areasDisponibles: string[] = [];
+
+// Completar con los valores reales de la organización.
+export const responsablesDisponibles: string[] = [];
