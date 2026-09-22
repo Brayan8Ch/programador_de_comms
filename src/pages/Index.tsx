@@ -8,7 +8,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Calendar, List, Moon, Sun } from "lucide-react";
 import { toast } from "sonner";
-import { Show, SignInButton, SignUpButton, UserButton } from "@clerk/react";
 
 const Index = () => {
   const [communications, setCommunications] = useState<Communication[]>([]);
@@ -59,19 +58,6 @@ const Index = () => {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Show when="signed-out">
-              <SignInButton mode="modal">
-                <Button variant="ghost" size="sm">
-                  Iniciar sesión
-                </Button>
-              </SignInButton>
-              <SignUpButton mode="modal">
-                <Button size="sm">Crear cuenta</Button>
-              </SignUpButton>
-            </Show>
-            <Show when="signed-in">
-              <UserButton afterSignOutUrl="/" />
-            </Show>
             <Button
               variant="ghost"
               size="icon"
