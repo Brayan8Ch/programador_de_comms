@@ -29,12 +29,12 @@ interface CommunicationFormProps {
 
 export const CommunicationForm = ({
   onAddCommunication,
-  initialArea = "",
-  initialResponsable = "",
+  initialArea,
+  initialResponsable,
 }: CommunicationFormProps) => {
   const [formData, setFormData] = useState({
-    area: initialArea,
-    responsable: initialResponsable,
+    area: initialArea ?? localStorage.getItem("comms:area") ?? "",
+    responsable: initialResponsable ?? localStorage.getItem("comms:responsable") ?? "",
     campana: "",
     proceso: "",
     subCampana: "",
@@ -67,6 +67,8 @@ export const CommunicationForm = ({
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    if (field === "area") localStorage.setItem("comms:area", value);
+    if (field === "responsable") localStorage.setItem("comms:responsable", value);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
