@@ -1,11 +1,12 @@
 import { useMemo } from "react";
 import { Communication } from "@/types/communication";
-import { format, eachDayOfInterval, getDay } from "date-fns";
+import { format, eachDayOfInterval } from "date-fns";
 import { es } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, Copy } from "lucide-react";
 import { exportToExcel, copyToClipboard } from "@/utils/excelExport";
+import { canalesEnFecha } from "@/utils/schedule";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DndContext, closestCenter, DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
@@ -21,10 +22,9 @@ interface ScheduleViewProps {
 interface SortableRowProps {
   comm: Communication;
   days: Date[];
-  dayAbbreviations: string[];
 }
 
-const SortableRow = ({ comm, days, dayAbbreviations }: SortableRowProps) => {
+const SortableRow = ({ comm, days }: SortableRowProps) => {
   const {
     attributes,
     listeners,
@@ -38,17 +38,6 @@ const SortableRow = ({ comm, days, dayAbbreviations }: SortableRowProps) => {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-  };
-
-  const isCommunicationActive = (comm: Communication, date: Date) => {
-    const isInRange = date >= comm.fechaInicio && date <= comm.fechaFin;
-    if (!isInRange) return { active: false, canales: [] };
-
-    const dayOfWeek = getDay(date);
-    const dayAbbr = dayAbbreviations[dayOfWeek];
-    const canales = comm.canalesPorDia[dayAbbr] || [];
-    
-    return { active: canales.length > 0, canales };
   };
 
   // Obtener lista única de canales usados en esta comunicación (mantener orden consistente)
@@ -89,10 +78,7 @@ const SortableRow = ({ comm, days, dayAbbreviations }: SortableRowProps) => {
           {filasCanales.map((canal) => (
             <>
               {days.map((day, idx) => {
-                const dow = getDay(day);
-                const dayAbbr = dayAbbreviations[dow];
-                const canalesDia = comm.canalesPorDia[dayAbbr] || [];
-                const activo = canalesDia.includes(canal);
+                const activo = canalesEnFecha(comm, day).includes(canal);
 
                 return (
                   <div
@@ -135,8 +121,6 @@ export const ScheduleView = ({ communications, onReorder }: ScheduleViewProps) =
     if (!dateRange) return [];
     return eachDayOfInterval({ start: dateRange.start, end: dateRange.end });
   }, [dateRange]);
-
-  const dayAbbreviations = ["DO", "LU", "MA", "MI", "JU", "VI", "SA"];
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -240,7 +224,6 @@ export const ScheduleView = ({ communications, onReorder }: ScheduleViewProps) =
                     key={comm.id}
                     comm={comm}
                     days={days}
-                    dayAbbreviations={dayAbbreviations}
                   />
                 ))}
               </SortableContext>

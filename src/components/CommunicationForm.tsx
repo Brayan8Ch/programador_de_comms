@@ -5,8 +5,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Combobox } from "@/components/ui/combobox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MultiCombobox } from "@/components/ui/multi-combobox";
 import ChannelDayGrid from "@/components/ChannelDayGrid";
 import { format } from "date-fns";
 import type { DateRange } from "react-day-picker";
@@ -42,6 +43,7 @@ export const CommunicationForm = ({
     ciclo: "",
   });
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [cadaNSemanas, setCadaNSemanas] = useState("1");
   const [canalesPorDia, setCanalesPorDia] = useState<{ [key: string]: string[] }>({
     LU: [],
     MA: [],
@@ -54,13 +56,11 @@ export const CommunicationForm = ({
 
   const [canalesSeleccionados, setCanalesSeleccionados] = useState<string[]>([]);
 
-  const toggleCanalSeleccionado = (canal: string) => {
-    setCanalesSeleccionados((prev) =>
-      prev.includes(canal) ? prev.filter((c) => c !== canal) : [...prev, canal]
-    );
+  const handleCanalesSeleccionadosChange = (next: string[]) => {
+    setCanalesSeleccionados(next);
     setCanalesPorDia((prevDias) =>
       Object.fromEntries(
-        Object.entries(prevDias).map(([dia, cs]) => [dia, cs.filter((c) => c !== canal)])
+        Object.entries(prevDias).map(([dia, cs]) => [dia, cs.filter((c) => next.includes(c))])
       )
     );
   };
@@ -94,6 +94,7 @@ export const CommunicationForm = ({
       ...formData,
       fechaInicio: dateRange.from,
       fechaFin: dateRange.to,
+      cadaNSemanas: Number(cadaNSemanas),
       canalesPorDia,
     };
 
@@ -225,6 +226,23 @@ export const CommunicationForm = ({
                 </PopoverContent>
               </Popover>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cadaNSemanas">Frecuencia</Label>
+              <Select value={cadaNSemanas} onValueChange={setCadaNSemanas}>
+                <SelectTrigger id="cadaNSemanas">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Todas las semanas</SelectItem>
+                  <SelectItem value="2">Cada 2 semanas (omite 1)</SelectItem>
+                  <SelectItem value="3">Cada 3 semanas (omite 2)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Cuenta desde la semana de la fecha de inicio.
+              </p>
+            </div>
           </div>
 
           <div className="space-y-3">
@@ -232,20 +250,12 @@ export const CommunicationForm = ({
             <p className="text-sm text-muted-foreground">
               Elegí qué canales aplican para esta comunicación, así la grilla de abajo no muestra los que no usás
             </p>
-            <div className="flex flex-wrap gap-3">
-              {canalesDisponibles.map((canal, index) => (
-                <div key={canal} className="flex items-center gap-2">
-                  <Checkbox
-                    id={`canal-${index}`}
-                    checked={canalesSeleccionados.includes(canal)}
-                    onCheckedChange={() => toggleCanalSeleccionado(canal)}
-                  />
-                  <Label htmlFor={`canal-${index}`} className="font-normal cursor-pointer">
-                    {canal}
-                  </Label>
-                </div>
-              ))}
-            </div>
+            <MultiCombobox
+              value={canalesSeleccionados}
+              onChange={handleCanalesSeleccionadosChange}
+              options={canalesDisponibles}
+              placeholder="Seleccionar canales..."
+            />
           </div>
 
           <div className="space-y-3">

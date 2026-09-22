@@ -1,9 +1,8 @@
 import * as XLSX from "xlsx";
 import { Communication } from "@/types/communication";
-import { format, eachDayOfInterval, getDay } from "date-fns";
+import { format, eachDayOfInterval } from "date-fns";
 import { es } from "date-fns/locale";
-
-const dayAbbreviations = ["DO", "LU", "MA", "MI", "JU", "VI", "SA"];
+import { canalesEnFecha } from "@/utils/schedule";
 
 export const exportToExcel = (communications: Communication[]) => {
   const rows: any[] = [];
@@ -16,9 +15,7 @@ export const exportToExcel = (communications: Communication[]) => {
     });
 
     days.forEach((day) => {
-      const dayOfWeek = getDay(day);
-      const dayAbbr = dayAbbreviations[dayOfWeek];
-      const canalesDelDia = comm.canalesPorDia[dayAbbr] || [];
+      const canalesDelDia = canalesEnFecha(comm, day);
 
       // Crear una fila por cada canal activo en ese día
       canalesDelDia.forEach((canal) => {
@@ -83,9 +80,7 @@ export const copyToClipboard = async (communications: Communication[]) => {
   communications.forEach((comm) => {
     const days = eachDayOfInterval({ start: comm.fechaInicio, end: comm.fechaFin });
     days.forEach((day) => {
-      const dayOfWeek = getDay(day);
-      const dayAbbr = dayAbbreviations[dayOfWeek];
-      const canalesDelDia = comm.canalesPorDia[dayAbbr] || [];
+      const canalesDelDia = canalesEnFecha(comm, day);
 
       canalesDelDia.forEach((canal) => {
         const row = [

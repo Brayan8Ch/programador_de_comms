@@ -2,10 +2,11 @@ import { Communication } from "@/types/communication";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Trash2, Download, GripVertical, Copy, Pencil } from "lucide-react";
-import { format, eachDayOfInterval, getDay } from "date-fns";
+import { format, eachDayOfInterval } from "date-fns";
 import { es } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { exportToExcel, copyToClipboard } from "@/utils/excelExport";
+import { canalesEnFecha } from "@/utils/schedule";
 import { DndContext, closestCenter, DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -135,7 +136,6 @@ const SortableItem = ({ comm, onDelete, onEdit }: SortableItemProps) => {
 
 const copySingleCommunication = async (comm: Communication) => {
   try {
-    const dayAbbreviations = ["DO", "LU", "MA", "MI", "JU", "VI", "SA"];
     const rows: string[] = [];
     /*
     const headers = [
@@ -156,9 +156,7 @@ const copySingleCommunication = async (comm: Communication) => {
 
     const days = eachDayOfInterval({ start: comm.fechaInicio, end: comm.fechaFin });
     days.forEach((day) => {
-      const dayOfWeek = getDay(day);
-      const dayAbbr = dayAbbreviations[dayOfWeek];
-      const canalesDelDia = comm.canalesPorDia[dayAbbr] || [];
+      const canalesDelDia = canalesEnFecha(comm, day);
       canalesDelDia.forEach((canal) => {
         const row = [
           comm.area || "",
@@ -246,7 +244,6 @@ export const CommunicationList = ({ communications, onDelete, onReorder, onEdit 
 
   const handleVerify = () => {
     try {
-      const dayAbbreviations = ["DO", "LU", "MA", "MI", "JU", "VI", "SA"];
       const rows: Array<{ campana: string; date: string; day: string; canales: string[] }> = [];
 
       communications.forEach((comm) => {
@@ -255,10 +252,8 @@ export const CommunicationList = ({ communications, onDelete, onReorder, onEdit 
         const end = comm.fechaFin;
         const cur = new Date(start.getTime());
         while (cur <= end) {
-          const dow = cur.getDay();
-          const dayAbbr = dayAbbreviations[dow];
-          const canales = comm.canalesPorDia[dayAbbr] || [];
-          rows.push({ campana: comm.campana, date: cur.toISOString().split("T")[0], day: dayAbbr, canales });
+          const canales = canalesEnFecha(comm, cur);
+          rows.push({ campana: comm.campana, date: cur.toISOString().split("T")[0], day: format(cur, "EEEEEE", { locale: es }), canales });
           cur.setDate(cur.getDate() + 1);
         }
       });

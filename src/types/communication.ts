@@ -10,6 +10,8 @@ export interface Communication {
   ciclo: string;
   fechaInicio: Date;
   fechaFin: Date;
+  /** 1 = todas las semanas, 2 = una sí una no, 3 = una sí dos no. Default 1. */
+  cadaNSemanas?: number;
   canalesPorDia: {
     [key: string]: string[]; // key = día (LU, MA, etc), value = array de canales
   };
