@@ -15,8 +15,8 @@ interface SessionSetupProps {
 }
 
 export const SessionSetup = ({ onComplete }: SessionSetupProps) => {
-  const [area, setArea] = useState("");
-  const [responsable, setResponsable] = useState("");
+  const [area, setArea] = useState(() => localStorage.getItem("comms:area") ?? "");
+  const [responsable, setResponsable] = useState(() => localStorage.getItem("comms:responsable") ?? "");
 
   const canContinue = area.trim() !== "" && responsable.trim() !== "";
 
@@ -52,7 +52,15 @@ export const SessionSetup = ({ onComplete }: SessionSetupProps) => {
             />
           </div>
         </div>
-        <Button type="button" disabled={!canContinue} onClick={() => onComplete({ area, responsable })}>
+        <Button
+          type="button"
+          disabled={!canContinue}
+          onClick={() => {
+            localStorage.setItem("comms:area", area);
+            localStorage.setItem("comms:responsable", responsable);
+            onComplete({ area, responsable });
+          }}
+        >
           Continuar
         </Button>
       </CardContent>
