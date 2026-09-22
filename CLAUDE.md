@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-SPA en React + TypeScript + Vite para planificar y visualizar campañas de comunicación (canal × día × rango de fechas). Generada originalmente con Lovable, se despliega a GitHub Pages vía Actions (dominio custom `programadorcomms.bchumpitaz.dev` via `CNAME`).
+SPA en React + TypeScript + Vite para planificar y visualizar campañas de comunicación (canal × día × rango de fechas). Generada originalmente con Lovable. Deploy actual vía Vercel, autodetecta Vite y builda cada push a `origin/master`.
 
 ## Commands
 
@@ -14,15 +14,15 @@ npm run build       # build de producción a dist/
 npm run build:dev   # build en modo development (sin minificar, útil para debug)
 npm run lint         # ESLint sobre todo el repo
 npm run preview      # sirve dist/ localmente
-npm run deploy        # publica dist/ a gh-pages vía gh-pages CLI
 ```
 
 No hay test runner configurado en este proyecto.
 
-## Deploy y base pública
+## Deploy
 
-- El deploy real ocurre en `.github/workflows/deploy.yml`: en push a `publish` o `main`, hace `npm ci && npm run build` con `VITE_BASE=/programador_de_comms/` y publica `dist/` a la branch `gh-pages` (usada por GitHub Pages, con dominio custom desde `CNAME`).
-- `vite.config.ts` lee `base` desde `process.env.VITE_BASE`, default `/`. No hardcodear la base — si hace falta cambiarla, ajustar la env var en el workflow, no el config.
+- Vercel deploya automáticamente cada push a `origin/master` (ya no se usa el flujo viejo de GitHub Actions + gh-pages ni las branches `publish`/`main`).
+- `vite.config.ts` lee `base` desde `process.env.VITE_BASE`, default `/` — Vercel no setea esa var, así que sirve desde la raíz del dominio.
+- Quedan restos del setup viejo de GitHub Pages sin usar: el script `deploy` en `package.json` (gh-pages CLI) y el archivo `CNAME`. No los borré por las dudas, pero no forman parte del flujo actual.
 
 ## Arquitectura
 
